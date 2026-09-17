@@ -51,9 +51,10 @@ let gameOpener=null;
 function go(index,fromHash=false){
  index=Math.max(0,Math.min(slides.length-1,index));
  if(dialog.open||index===current)return;
+ all[index].style.setProperty('--slide-direction',index>current?'1':'-1');
  all[current].querySelectorAll('video').forEach(v=>v.pause());all[current].hidden=true;all[current].classList.remove('entering');
  current=index;all[current].hidden=false;all[current].scrollTop=0;all[current].classList.add('entering');
- update();if(!fromHash)history.replaceState(null,'',current?`#${current+1}`:location.pathname+location.search);
+ update();window.dispatchEvent(new Event('deckslidechange'));if(!fromHash)history.replaceState(null,'',current?`#${current+1}`:location.pathname+location.search);
 }
 function update(){page.innerHTML=`<b>${String(current+1).padStart(2,'0')}</b><span>/ 34</span>`;prev.disabled=current===0;next.disabled=current===33;progress.style.width=`${(current+1)/34*100}%`;document.body.classList.toggle('is-video',!!slides[current].video);document.title=`${current+1} · ${slides[current].title||slides[current].texts[0]} · X-Lab`;}
 function toggleVideo(){const v=all[current].querySelector('video');if(!v)return;if(v.paused){v.play().catch(()=>{});}else v.pause();}
@@ -65,7 +66,6 @@ function onKey(e){if(dialog.open){if(e.key==='Escape'){e.preventDefault();closeG
 document.addEventListener('keydown',onKey);
 all.forEach(section=>{const v=section.querySelector('video');if(!v)return;const btn=section.querySelector('.video-toggle');v.addEventListener('click',toggleVideo);btn.addEventListener('click',()=>{toggleVideo();v.focus({preventScroll:true});});v.addEventListener('play',()=>{section.classList.add('playing');btn.setAttribute('aria-label','暂停视频');});v.addEventListener('pause',()=>{section.classList.remove('playing');btn.setAttribute('aria-label','播放视频');});v.addEventListener('ended',()=>section.classList.remove('playing'));});
 let touch=null;deck.addEventListener('touchstart',e=>{if(e.touches.length!==1||e.target.closest('button,select,iframe')){touch=null;return;}touch={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});deck.addEventListener('touchend',e=>{if(!touch)return;const dx=e.changedTouches[0].clientX-touch.x,dy=e.changedTouches[0].clientY-touch.y;touch=null;if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.6)go(current+(dx<0?1:-1));},{passive:true});
-const reduced=matchMedia('(prefers-reduced-motion: reduce)');let lightFrame=false;document.addEventListener('pointermove',e=>{if(reduced.matches||e.pointerType==='touch'||lightFrame)return;lightFrame=true;requestAnimationFrame(()=>{document.documentElement.style.setProperty('--mx',`${e.clientX/innerWidth*100}%`);document.documentElement.style.setProperty('--my',`${e.clientY/innerHeight*100}%`);document.documentElement.style.setProperty('--shadow-x',`${(0.5-e.clientX/innerWidth)*9}px`);document.documentElement.style.setProperty('--shadow-y',`${10+(0.5-e.clientY/innerHeight)*7}px`);lightFrame=false;});},{passive:true});
 const dust=document.getElementById('dust');for(let i=0;i<28;i++){const dot=document.createElement('i');dot.className='speck';dot.style.cssText=`left:${(i*37.37)%100}%;top:${(i*17.21+13)%100}%;animation-delay:${-i*.81}s;animation-duration:${10+i%9}s`;dust.append(dot);}
 for(let n=1;n<=12;n++){const opt=document.createElement('option');opt.value=n;opt.textContent=`第${n}章消消乐`;chap.append(opt);}
 function chapterPath(n){return `games/${String(n).padStart(2,'0')}_第${n}章消消乐.html`;}
